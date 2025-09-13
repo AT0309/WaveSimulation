@@ -1,3 +1,11 @@
+//設定関係UI 変数定義
+const playButton=document.getElementById("playButton");
+const resetButton=document.getElementById("resetButton");
+const waveSourceTable=document.getElementById("wavePointTable");
+const objectTable=document.getElementById("objectTable");
+
+
+//シミュレーション本体　変数定義
 const waveCanvas = document.getElementById("waveCanvas");
 const viewCanvas = document.getElementById("viewCanvas");
 const waveCtx = waveCanvas.getContext("2d");
@@ -8,22 +16,106 @@ const c = 3;                   // 波速
 const dx = 1.0;
 const dt = 0.1;
 const lambda = (c*c)*(dt*dt)/(dx*dx);
+var isPlaying=false;
 
 let uPrev = Array.from({length: N}, () => Array(N).fill(0));
 let u = Array.from({length: N}, () => Array(N).fill(0));
 let uNext = Array.from({length: N}, () => Array(N).fill(0));
 let isObj = Array.from({length: N}, () => Array(N).fill(false));
 
-// 初期条件：真ん中に波を入れる
-u[100][50] = 1;
-//u[Math.floor(N/2)][Math.floor(N/2)-20] = 3;
 
-for(let i=0; i<N; i+=5){
-    for(let j=100; j<N; j+=5){
-        isObj[i][j]=true;
+draw();
+loop();
+
+
+
+
+function playButton_Click(){
+    isPlaying=!isPlaying;
+    playButton.innerText=isPlaying?"Pause":"Play";
+}
+function resetButton_Click(){
+    Reset();
+    draw();
+}
+
+function UpdateCanvasData(){//tableのデータを参照して波源と障害物を設置
+    Reset();
+
+    document.querySelectorAll("#wavePointTable tr").forEach((tr, i) => {
+      if (i < 2) return; // ヘッダー行はスキップ
+      const x = tr.querySelector(".wave-x").value;
+      const y = tr.querySelector(".wave-y").value;
+      if(x && y){
+        u[y][x]=10;
+      }
+    });
+    document.querySelectorAll("#objectTable tr").forEach((tr, i) => {
+      if (i < 2) return; // ヘッダー行はスキップ
+      const xs = tr.querySelector(".object-xs").value;
+      const xe = tr.querySelector(".object-xe").value;
+      const ys = tr.querySelector(".object-ys").value;
+      const ye = tr.querySelector(".object-ye").value;
+      if(xs && xe && ys && ye){
+        for(let i = ys; i<ye; i++){
+          for(let j= xs; j<xe; j++){
+            isObj[i][j]=true;
+          }
+        }
+      }
+    });
+
+    draw();
+}
+
+function AddWaveSourceRow(){
+    const row = waveSourceTable.insertRow();
+    row.insertCell().innerHTML = `<input type="number" class="wave-x">`;
+    row.insertCell().innerHTML = `<input type="number" class="wave-y">`;
+    row.insertCell().innerHTML = `<button onclick="deleteRow(this)" class="removeRowButton">×</button>`;
+}
+function AddObjectRow(){
+    const row = objectTable.insertRow();
+    row.insertCell().innerHTML = `<input type="number" class="object-xs">`;
+    row.insertCell().innerHTML = `<input type="number" class="object-xe">`;
+    row.insertCell().innerHTML = `<input type="number" class="object-ys">`;
+    row.insertCell().innerHTML = `<input type="number" class="object-ye">`;
+    row.insertCell().innerHTML = `<button onclick="deleteRow(this)" class="removeRowButton">×</button>`;
+}
+function deleteRow(btn){
+  const row=btn.parentNode.parentNode;
+  row.parentNode.removeChild(row);
+}
+
+
+function Reset(){//シミュレーション時間を0にする
+    uPrev = Array.from({length: N}, () => Array(N).fill(0));
+    u = Array.from({length: N}, () => Array(N).fill(0));
+    uNext = Array.from({length: N}, () => Array(N).fill(0));
+    isObj = Array.from({length: N}, () => Array(N).fill(false));
+}
+
+
+function Init(){//初期化
+    Reset();
+    draw();
+    while(waveSourceTable.rows.length>2){
+      waveSourceTable.deleteRow(waveSourceTable.rows.length-1);
+    }
+    while(objectTable.rows.length>2){
+      objectTable.deleteRow(objectTable.rows.length-1);
     }
 }
 
+
+
+function loop() {
+    if(isPlaying){
+        step();
+        draw();
+    }
+    requestAnimationFrame(loop);
+}
 
 function step() {
   for (let i = 1; i < N-1; i++) {
@@ -45,7 +137,6 @@ function draw() {
   const img = waveCtx.createImageData(N, N);
   for (let i = 0; i < N; i++) {
     for (let j = 0; j < N; j++) {
-      //const val = Math.floor((u[i][j] + 1) * 127); // -1〜1 → 0〜255
       const index = 4 * (i * N + j);
       if(isObj[i][j]){
         img.data[index] = 0;
@@ -68,9 +159,3 @@ function draw() {
   viewCtx.drawImage(waveCanvas,0,0,viewCanvas.width,viewCanvas.height);
 }
 
-function loop() {
-  step();
-  draw();
-  requestAnimationFrame(loop);
-}
-loop();
