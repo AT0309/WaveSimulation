@@ -1,0 +1,28 @@
+#TopContainer{
+    position: relative;
+    display: inline-block;
+    flex-direction: row;
+}
+body{
+    display: flex;
+    flex-direction: column;
+}
+#viewCanvas{
+    width: 500px;
+    height: 500px;
+}
+#tableDiv{
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.wave-x,.wave-y,.object-xs,.object-xe,.object-ys,.object-ye{
+    width: 50px;
+}
+.removeRowButton{
+    color: red;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
